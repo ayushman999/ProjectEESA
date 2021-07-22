@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -45,6 +46,7 @@ public class CommentActivity extends AppCompatActivity {
 
     private final Context mContext = this;
     int i = 0;
+    static DocumentSnapshot lastComment;
     TextView numComments;
     RecyclerView commentsList;
     RecyclerCommentAdapter commentAdapter;
@@ -55,6 +57,7 @@ public class CommentActivity extends AppCompatActivity {
     DocumentReference postref;
     DocumentReference username;
     String postID;
+    NestedScrollView nestedScrollView;
     ImageView postImg, postProfileHeader, likeBtn, bookmarkBtn;
     TextView caption, likes, captionHeader, postHeader, postTime;
     CardView mainCard;
@@ -93,10 +96,11 @@ public class CommentActivity extends AppCompatActivity {
         mainCard = findViewById(R.id.mainCard1);
         bookmarkBtn = findViewById(R.id.post_save_btn1);
         postHeaderLayout = findViewById(R.id.post_header_layout1);
-
         commentsList = findViewById(R.id.comments_list);
         write_cmt = findViewById(R.id.write_comment);
         post_cmt = findViewById(R.id.postCmt);
+        //For Pagination
+        nestedScrollView=findViewById(R.id.nested_scroll_comment);
         Intent intent = getIntent();
         postID = intent.getStringExtra("postID");
         postPath = "AllPost/" + postID;
@@ -220,8 +224,20 @@ public class CommentActivity extends AppCompatActivity {
                 postComment();
             }
         });
+        setupPagination();
 
+    }
 
+    private void setupPagination() {
+        nestedScrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                if(scrollY==v.getChildAt(0).getMeasuredHeight()-v.getMeasuredHeight())
+                {
+                    Toast.makeText(mContext, "Last!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     @Override
@@ -235,7 +251,7 @@ public class CommentActivity extends AppCompatActivity {
 
     void fetchComments() {
 //        ArrayList<Comment> commentList = new ArrayList<>();
-        Query query = commentsRef.orderBy("time", Query.Direction.DESCENDING);
+        Query query = commentsRef.orderBy("time", Query.Direction.DESCENDING).limit(2);
         FirestoreRecyclerOptions options = new FirestoreRecyclerOptions.Builder<Comment>().setQuery(query, Comment.class).build();
         commentAdapter = new RecyclerCommentAdapter(options, CommentActivity.this, uid -> {
             Intent profileIntent = new Intent(mContext, UserProfileActivity.class);
